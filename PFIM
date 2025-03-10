@@ -1,0 +1,351 @@
+# Riff C, Guilhaumou R, Marsot A, et al. Ropivacaine Wound Infiltration for Pain Management After Breast Cancer Mastectomy: A Population Pharmacokinetic Analysis. Clin Pharmacol Drug Dev. 2018;7(8):811-819. doi:10.1002/cpdd.452
+modelEquations = list(
+
+  outcomes = list( "RespPK"),
+
+  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
+
+
+modelParameters = list(
+  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
+  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+
+
+
+errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
+modelError = list( errorModelRespPK )
+
+## sampling times
+samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,0.75,1,12))
+
+# arm
+administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
+
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ))
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+evaluationPop = Evaluation( name = "",
+                            modelEquations = modelEquations,
+                            modelParameters = modelParameters,
+                            modelError = modelError,
+                            outcomes = list( "RespPK"),
+                            designs = list( design1 ),
+                            fim = "population",
+                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
+
+evaluationPop = run( evaluationPop )
+show( evaluationPop )
+outputPath<-getwd()
+outputFile = "Test Eval.html"
+plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
+Report( evaluationPop, outputPath, outputFile, plotOptions )
+
+
+
+
+
+
+
+
+
+
+# constraints
+administrationConstraintsRespPK = AdministrationConstraints( outcome = "RespPK", doses = c( 80) )
+		
+samplingConstraintsRespPK  = SamplingTimeConstraints( outcome = "RespPK",
+                                                      initialSamplings = c(0.25,0.5,0.75,1,2,3,4,6,8,10,12),
+                                                      numberOfsamplingsOptimisable = 5 )
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ),
+            administrationsConstraints = list( administrationConstraintsRespPK ),
+            samplingTimesConstraints = list( samplingConstraintsRespPK ) )
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+
+# optimize the Fisher Information Matrix for the PopulationFIM
+optimizationPopFIM = Optimization( name = "PK_analytic_populationFIM",
+                             modelEquations = modelEquations,
+                             modelParameters = modelParameters,
+                             modelError = modelError,
+                             optimizer = "FedorovWynnAlgorithm",
+                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,12)),
+                             numberOfSubjects = c(100),
+                             proportionsOfSubjects = c(1),
+                             showProcess = T),
+                             designs = list( design1 ),
+                             fim = "population",
+                             outcomes = list( "RespPK" ) )
+
+optimizationPopFIM = run( optimizationPopFIM )
+show( optimizationPopFIM )
+
+
+# plots
+plotOptions = list( unitTime=c("hour"), unitResponses= c("mcg/mL"))
+outputFile = "OptimizationPopFIMR1.html"
+Report( optimizationPopFIM, outputPath, outputFile, plotOptions )
+
+
+
+
+
+
+
+
+
+
+
+
+# Riff C, Guilhaumou R, Marsot A, et al. Ropivacaine Wound Infiltration for Pain Management After Breast Cancer Mastectomy: A Population Pharmacokinetic Analysis. Clin Pharmacol Drug Dev. 2018;7(8):811-819. doi:10.1002/cpdd.452
+modelEquations = list(
+
+  outcomes = list( "RespPK"),
+
+  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
+
+
+modelParameters = list(
+  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
+  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+
+
+
+errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
+modelError = list( errorModelRespPK )
+
+## sampling times
+samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,6,10,12))
+
+# arm
+administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
+
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ))
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+evaluationPop = Evaluation( name = "",
+                            modelEquations = modelEquations,
+                            modelParameters = modelParameters,
+                            modelError = modelError,
+                            outcomes = list( "RespPK"),
+                            designs = list( design1 ),
+                            fim = "population",
+                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
+
+evaluationPop = run( evaluationPop )
+show( evaluationPop )
+outputPath<-getwd()
+outputFile = "Test EvalArm1.html"
+plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
+Report( evaluationPop, outputPath, outputFile, plotOptions )
+
+
+
+
+
+
+
+
+
+
+modelEquations = list(
+
+  outcomes = list( "RespPK"),
+
+  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
+
+
+modelParameters = list(
+  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
+  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+
+
+
+errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
+modelError = list( errorModelRespPK )
+
+## sampling times
+samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,6,8,12))
+
+# arm
+administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
+
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ))
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+evaluationPop = Evaluation( name = "",
+                            modelEquations = modelEquations,
+                            modelParameters = modelParameters,
+                            modelError = modelError,
+                            outcomes = list( "RespPK"),
+                            designs = list( design1 ),
+                            fim = "population",
+                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
+
+evaluationPop = run( evaluationPop )
+show( evaluationPop )
+outputPath<-getwd()
+outputFile = "Test EvalArm2.html"
+plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
+Report( evaluationPop, outputPath, outputFile, plotOptions )
+
+
+
+
+
+
+
+
+
+modelEquations = list(
+
+  outcomes = list( "RespPK"),
+
+  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
+
+
+modelParameters = list(
+  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
+  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+
+
+
+errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
+modelError = list( errorModelRespPK )
+
+## sampling times
+samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,4,6,10,12))
+
+# arm
+administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
+
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ))
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+evaluationPop = Evaluation( name = "",
+                            modelEquations = modelEquations,
+                            modelParameters = modelParameters,
+                            modelError = modelError,
+                            outcomes = list( "RespPK"),
+                            designs = list( design1 ),
+                            fim = "population",
+                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
+
+evaluationPop = run( evaluationPop )
+show( evaluationPop )
+outputPath<-getwd()
+outputFile = "Test EvalArm3.html"
+plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
+Report( evaluationPop, outputPath, outputFile, plotOptions )
+
+
+
+
+
+modelEquations = list(
+
+  outcomes = list( "RespPK"),
+
+  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
+
+
+modelParameters = list(
+  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
+  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+
+
+
+errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
+modelError = list( errorModelRespPK )
+
+## sampling times
+samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,4,6,12))
+
+# arm
+administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
+
+
+
+arm1 = Arm( name = "BrasTest1",
+            size = 50,
+            administrations = list( administrationRespPK ),
+            samplingTimes   = list( samplingTimesRespPK  ))
+
+
+
+design1 = Design( name = "design1", arms = list( arm1 ))
+
+
+
+evaluationPop = Evaluation( name = "",
+                            modelEquations = modelEquations,
+                            modelParameters = modelParameters,
+                            modelError = modelError,
+                            outcomes = list( "RespPK"),
+                            designs = list( design1 ),
+                            fim = "population",
+                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
+
+evaluationPop = run( evaluationPop )
+show( evaluationPop )
+outputPath<-getwd()
+outputFile = "Test EvalArm4.html"
+plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
+Report( evaluationPop, outputPath, outputFile, plotOptions )
+
+
+
+
