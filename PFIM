@@ -9,7 +9,7 @@ modelEquations = list(
 modelParameters = list(
   ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
   ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.5 )))
 
 
 
@@ -64,8 +64,8 @@ Report( evaluationPop, outputPath, outputFile, plotOptions )
 administrationConstraintsRespPK = AdministrationConstraints( outcome = "RespPK", doses = c( 80) )
 		
 samplingConstraintsRespPK  = SamplingTimeConstraints( outcome = "RespPK",
-                                                      initialSamplings = c(0.25,0.5,0.75,1,2,3,4,6,8,10,12),
-                                                      numberOfsamplingsOptimisable = 5 )
+                                                      initialSamplings = c(0.25,0.5,0.75,1,1.5,4.5,6,8,10,12,16,18,20,22,24),
+                                                      numberOfsamplingsOptimisable = 6 )
 
 
 arm1 = Arm( name = "BrasTest1",
@@ -88,8 +88,8 @@ optimizationPopFIM = Optimization( name = "PK_analytic_populationFIM",
                              modelParameters = modelParameters,
                              modelError = modelError,
                              optimizer = "FedorovWynnAlgorithm",
-                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,12)),
-                             numberOfSubjects = c(100),
+                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,1.5,4.5,6,8,10,12,16,18,20,22,24)),
+                             numberOfSubjects = c(50),
                              proportionsOfSubjects = c(1),
                              showProcess = T),
                              designs = list( design1 ),
@@ -102,250 +102,79 @@ show( optimizationPopFIM )
 
 # plots
 plotOptions = list( unitTime=c("hour"), unitResponses= c("mcg/mL"))
-outputFile = "OptimizationPopFIMR1.html"
+outputFile = "OptimizationPopFIMR1V2.html"
 Report( optimizationPopFIM, outputPath, outputFile, plotOptions )
 
 
 
 
-
-
-
-
-
-
-
-
-# Riff C, Guilhaumou R, Marsot A, et al. Ropivacaine Wound Infiltration for Pain Management After Breast Cancer Mastectomy: A Population Pharmacokinetic Analysis. Clin Pharmacol Drug Dev. 2018;7(8):811-819. doi:10.1002/cpdd.452
-modelEquations = list(
-
-  outcomes = list( "RespPK"),
-
-  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
-
-
-modelParameters = list(
-  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
-  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
-
-
-
-errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
-modelError = list( errorModelRespPK )
-
-## sampling times
-samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,6,10,12))
-
-# arm
-administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
-
-
-
-arm1 = Arm( name = "BrasTest1",
-            size = 50,
-            administrations = list( administrationRespPK ),
-            samplingTimes   = list( samplingTimesRespPK  ))
-
-
-
-design1 = Design( name = "design1", arms = list( arm1 ))
-
-
-
-evaluationPop = Evaluation( name = "",
-                            modelEquations = modelEquations,
-                            modelParameters = modelParameters,
-                            modelError = modelError,
-                            outcomes = list( "RespPK"),
-                            designs = list( design1 ),
-                            fim = "population",
-                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
-
-evaluationPop = run( evaluationPop )
-show( evaluationPop )
-outputPath<-getwd()
-outputFile = "Test EvalArm1.html"
-plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
-Report( evaluationPop, outputPath, outputFile, plotOptions )
-
-
-
-
-
-
-
-
-
-
-modelEquations = list(
-
-  outcomes = list( "RespPK"),
-
-  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
-
-
-modelParameters = list(
-  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
-  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
-
-
-
-errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
-modelError = list( errorModelRespPK )
-
-## sampling times
-samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,6,8,12))
-
-# arm
-administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
-
-
-
-arm1 = Arm( name = "BrasTest1",
-            size = 50,
-            administrations = list( administrationRespPK ),
-            samplingTimes   = list( samplingTimesRespPK  ))
-
-
-
-design1 = Design( name = "design1", arms = list( arm1 ))
-
-
-
-evaluationPop = Evaluation( name = "",
-                            modelEquations = modelEquations,
-                            modelParameters = modelParameters,
-                            modelError = modelError,
-                            outcomes = list( "RespPK"),
-                            designs = list( design1 ),
-                            fim = "population",
-                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
-
-evaluationPop = run( evaluationPop )
-show( evaluationPop )
-outputPath<-getwd()
-outputFile = "Test EvalArm2.html"
-plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
-Report( evaluationPop, outputPath, outputFile, plotOptions )
-
-
-
-
-
-
-
-
-
-modelEquations = list(
-
-  outcomes = list( "RespPK"),
-
-  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
-
-
-modelParameters = list(
-  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
-  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
-
-
-
-errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
-modelError = list( errorModelRespPK )
-
-## sampling times
-samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,4,6,10,12))
-
-# arm
-administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
-
-
-
-arm1 = Arm( name = "BrasTest1",
-            size = 50,
-            administrations = list( administrationRespPK ),
-            samplingTimes   = list( samplingTimesRespPK  ))
-
-
-
-design1 = Design( name = "design1", arms = list( arm1 ))
-
-
-
-evaluationPop = Evaluation( name = "",
-                            modelEquations = modelEquations,
-                            modelParameters = modelParameters,
-                            modelError = modelError,
-                            outcomes = list( "RespPK"),
-                            designs = list( design1 ),
-                            fim = "population",
-                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
-
-evaluationPop = run( evaluationPop )
-show( evaluationPop )
-outputPath<-getwd()
-outputFile = "Test EvalArm3.html"
-plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
-Report( evaluationPop, outputPath, outputFile, plotOptions )
-
-
-
-
-
-modelEquations = list(
-
-  outcomes = list( "RespPK"),
-
-  equations = list(  "RespPK" = "dose_RespPK/V * ka/(ka - Cl/V) * (exp(-Cl/V * t) - exp(-ka * t))"))
-
-
-modelParameters = list(
-  ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
-  ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.0 ),fixedOmega=TRUE))
-
-
-
-errorModelRespPK = Proportional( outcome = "RespPK", sigmaSlope = 0.287 )
-modelError = list( errorModelRespPK )
-
-## sampling times
-samplingTimesRespPK = SamplingTimes( outcome = "RespPK", samplings = c(0.25,0.5,4,6,12))
-
-# arm
-administrationRespPK = Administration( outcome = "RespPK",timeDose = 0,  dose = c( 80 ))
-
-
-
-arm1 = Arm( name = "BrasTest1",
-            size = 50,
-            administrations = list( administrationRespPK ),
-            samplingTimes   = list( samplingTimesRespPK  ))
-
-
-
-design1 = Design( name = "design1", arms = list( arm1 ))
-
-
-
-evaluationPop = Evaluation( name = "",
-                            modelEquations = modelEquations,
-                            modelParameters = modelParameters,
-                            modelError = modelError,
-                            outcomes = list( "RespPK"),
-                            designs = list( design1 ),
-                            fim = "population",
-                            odeSolverParameters = list( atol = 1e-8, rtol = 1e-8 ) )
-
-evaluationPop = run( evaluationPop )
-show( evaluationPop )
-outputPath<-getwd()
-outputFile = "Test EvalArm4.html"
-plotOptions = list( unitTime=c("min"), unitResponses= c("ng/mL") )
-Report( evaluationPop, outputPath, outputFile, plotOptions )
-
-
-
-
+my_theme <- theme_minimal(base_size = 16) +
+  theme(
+    axis.title = element_text(size = 18, color = "black"),      # Axis labels size and color
+    axis.text = element_text(size = 16, color = "black"),       # Axis ticks size and color
+    axis.line = element_line(linewidth = 1.5),                  # Axis lines size
+    legend.title = element_text(size = 18, color = "black"),    # Legend title size and color
+    legend.text = element_text(size = 16, color = "black")      # Legend text size and color
+  )
+
+
+
+
+
+
+plot_pk <- ggplot() +
+  # Ribbon for 95% CI
+  geom_ribbon(
+    data = df_CI,
+    aes(x = time, ymin = low, ymax = high),
+    fill = "steelblue", alpha = 0.3,
+    show.legend = FALSE
+  ) +
+  # Median concentration-time profile
+  geom_line(
+    data = df_CI,
+    aes(x = time, y = median),
+    color = "steelblue",
+    size = 1.2,
+    show.legend = FALSE
+  ) +
+  # Points for sampling times
+  geom_point(
+    data = df_sampling,
+    aes(x = time, y = conc, color = Label),
+    shape = 19,   
+    size  = 5     
+  ) +
+  # Add time labels with adjusted positions for overlap
+  geom_text(
+    data = df_sampling,
+    aes(x = time, y = conc, label = time),
+    vjust = ifelse(df_sampling$time %in% c(0.25, 0.5), 2, 2),  # Move overlapping labels below
+    hjust = ifelse(df_sampling$time == 0.25, 0.5, 0.5),  # Slight right shift for 0.25
+    size  = 5,
+    color = "black"
+  ) +
+  # Manually set color for "Sampling Time"
+  scale_color_manual(
+    name   = NULL,
+    values = c("Sampling Time" = "black")
+  ) +
+  labs(
+    title = "Ropivacaine PK Model (100 Simulations)",
+    x     = "Time (hours)",
+    y     = "Ropivacaine concentration (mg/L)"
+  ) +
+ my_theme
+
+# Display the plot
+print(plot_pk)
+
+
+
+png("C:/Users/duflo/OneDrive/Bureau/LZD/PK PLOT.png", width = 16, height = 9, units = 'in', res = 900)  # Specify width, height, and resolution
+
+# Print the plot to the device
+print(plot_pk)
+
+# Close the device
+dev.off()
