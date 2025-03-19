@@ -9,7 +9,7 @@ modelEquations = list(
 modelParameters = list(
   ModelParameter( name = "Cl", distribution = LogNormal( mu = 18.8,   omega = 0.417 ) ),
   ModelParameter( name = "V", distribution = LogNormal( mu = 269,  omega = 0.391 ) ),
-  ModelParameter( name = "ka", distribution = LogNormal( mu = 0.406,    omega = 0.5 )))
+  ModelParameter( name = "ka", distribution = LogNormal( mu = 8,    omega = 0 ),fixedOmega=TRUE))
 
 
 
@@ -64,8 +64,8 @@ Report( evaluationPop, outputPath, outputFile, plotOptions )
 administrationConstraintsRespPK = AdministrationConstraints( outcome = "RespPK", doses = c( 80) )
 		
 samplingConstraintsRespPK  = SamplingTimeConstraints( outcome = "RespPK",
-                                                      initialSamplings = c(0.25,0.5,0.75,1,1.5,4.5,6,8,10,12,16,18,20,22,24),
-                                                      numberOfsamplingsOptimisable = 6 )
+                                                      initialSamplings = c(0.25,0.5,0.75,1,1.25,1.5,4,6,10,12,16,20,22,24),
+                                                      numberOfsamplingsOptimisable = 7 )
 
 
 arm1 = Arm( name = "BrasTest1",
@@ -88,7 +88,7 @@ optimizationPopFIM = Optimization( name = "PK_analytic_populationFIM",
                              modelParameters = modelParameters,
                              modelError = modelError,
                              optimizer = "FedorovWynnAlgorithm",
-                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,1.5,4.5,6,8,10,12,16,18,20,22,24)),
+                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,1.25,1.5,4,6,10,12,16,20,22,24)),
                              numberOfSubjects = c(50),
                              proportionsOfSubjects = c(1),
                              showProcess = T),
@@ -119,15 +119,153 @@ my_theme <- theme_minimal(base_size = 16) +
 
 
 
+library(ggplot2)
 
+############################################
+# 1) Define model and parameters
+############################################
 
+# Model equation for a single dose:
+# RespPK = (dose/V) * ka / (ka - Cl/V) * [exp(-Cl/V * t) - exp(-ka * t)]
+resp_pk <- function(t, Cl, V, ka, dose) {
+  (dose / V) * (ka / (ka - Cl / V)) * 
+    (exp(-(Cl / V) * t) - exp(-ka * t))
+}
 
+# Lognormal parameters (mu = mean on normal scale, omega = SD on log scale)
+mu_Cl    <- 18.8  # Clearance (L/h)
+omega_Cl <- 0.417
+
+mu_V     <- 269   # Volume (L)
+omega_V  <- 0.391
+
+mu_ka    <- 8 # Absorption rate (1/h), no variability (omega=0)
+omega_ka  <- 0
+
+# Single-dose amount (mg)
+dose <- 80
+
+############################################
+# 2) Simulation setup
+############################################
+# We simulate from t=0 to t=24.5 hours
+time_sim <- seq(0, 24.5, by = 0.1)
+
+# Number of simulations
+n_sim <- 100
+
+# Prepare a matrix to store all simulated concentrations
+# Rows = each time point, Columns = each simulation
+all_sims <- matrix(0, nrow = length(time_sim), ncol = n_sim)
+
+set.seed(123)  # for reproducibility (optional)
+for (i in seq_len(n_sim)) {
+  
+  # Draw individual parameters from lognormal distributions
+  # 1) Clearance
+  Cl_i <- rlnorm(1, 
+                 meanlog = log(mu_Cl), 
+                 sdlog   = omega_Cl)
+  
+  # 2) Volume
+  V_i  <- rlnorm(1,
+                 meanlog = log(mu_V),
+                 sdlog   = omega_V)
+  
+  # 3) ka is fixed (omega=0)
+  ka_i <- rlnorm(1,
+                 meanlog = log(mu_ka),
+                 sdlog   = omega_ka)
+  
+  # Compute concentration-time profile for this "individual"
+  conc_i <- sapply(time_sim, function(t) resp_pk(t, Cl_i, V_i, ka_i, dose))
+  
+  # Store into matrix
+  all_sims[, i] <- conc_i
+}
+
+# Compute median and 95% CI at each time point
+median_conc <- apply(all_sims, 1, median)
+low_conc    <- apply(all_sims, 1, quantile, probs = 0.025)
+high_conc   <- apply(all_sims, 1, quantile, probs = 0.975)
+
+# Combine into a data frame for plotting
+df_CI <- data.frame(
+  time   = time_sim,
+  median = median_conc,
+  low    = low_conc,
+  high   = high_conc
+)
+
+############################################
+# 3) Sampling times and points
+############################################
+sampling_times <- c(0.25, 0.75, 1, 1.25, 1.5, 22, 24)
+
+# Evaluate the *median profile* at these sampling times
+# (If you want per-simulation points, that's another approach.
+# Here, we'll just highlight where the median curve is at those times.)
+conc_sampling <- sapply(sampling_times, function(t) {
+  # Use the median PK parameters (for clarity), or
+  # you could evaluate the median profile we already computed:
+  # We'll find the closest index in time_sim
+  idx <- which.min(abs(time_sim - t))
+  median_conc[idx]
+})
+
+df_sampling <- data.frame(
+  time = sampling_times,
+  conc = conc_sampling,
+  # We'll add a factor to label it in the legend
+  Label = "Sampling Time"
+)
+
+############################################
+# 4) Plot
+############################################
+#------------------------------------------------------------
+# 1) Install / load required packages
+#------------------------------------------------------------
+# install.packages("ggrepel")   # if you don't have it installed
+library(ggplot2)
+library(ggrepel)
+
+#------------------------------------------------------------
+# 2) Example data setup
+#------------------------------------------------------------
+# Suppose you have median PK data with 95% CI in df_CI:
+#  df_CI has columns: time, median, low, high
+#    time: time points
+#    median: median concentration
+#    low, high: 2.5% and 97.5% quantiles (for 95% CI ribbon)
+#
+# And sampling_times is your vector of sampling times:
+
+sampling_times <- c(0.25, 0.75, 1, 1.25, 1.5, 22, 24)
+
+# Evaluate the median profile (example: find the index in time_sim that's closest):
+conc_sampling <- sapply(sampling_times, function(t) {
+  idx <- which.min(abs(time_sim - t))
+  median_conc[idx]
+})
+
+df_sampling <- data.frame(
+  time = sampling_times,
+  conc = conc_sampling,
+  # We'll add a factor to label it in the legend
+  Label = "Sampling Time"
+)
+
+#------------------------------------------------------------
+# 3) Create the ggplot
+#------------------------------------------------------------
 plot_pk <- ggplot() +
   # Ribbon for 95% CI
   geom_ribbon(
     data = df_CI,
     aes(x = time, ymin = low, ymax = high),
-    fill = "steelblue", alpha = 0.3,
+    fill = "steelblue",
+    alpha = 0.3,
     show.legend = FALSE
   ) +
   # Median concentration-time profile
@@ -142,17 +280,19 @@ plot_pk <- ggplot() +
   geom_point(
     data = df_sampling,
     aes(x = time, y = conc, color = Label),
-    shape = 19,   
-    size  = 5     
+    shape = 19,
+    size  = 5
   ) +
-  # Add time labels with adjusted positions for overlap
-  geom_text(
+  # Use geom_text_repel to automatically avoid overlaps
+  geom_text_repel(
     data = df_sampling,
     aes(x = time, y = conc, label = time),
-    vjust = ifelse(df_sampling$time %in% c(0.25, 0.5), 2, 2),  # Move overlapping labels below
-    hjust = ifelse(df_sampling$time == 0.25, 0.5, 0.5),  # Slight right shift for 0.25
     size  = 5,
-    color = "black"
+    color = "black",
+    # Optional tweaks below; remove or adjust as needed:
+    max.overlaps = 20,
+    min.segment.length = 0,  # to ensure short segments still appear
+    segment.color = "black"
   ) +
   # Manually set color for "Sampling Time"
   scale_color_manual(
@@ -164,17 +304,20 @@ plot_pk <- ggplot() +
     x     = "Time (hours)",
     y     = "Ropivacaine concentration (mg/L)"
   ) +
- my_theme
+  my_theme  # your custom theme
 
-# Display the plot
+#------------------------------------------------------------
+# 4) Render the plot
+#------------------------------------------------------------
 print(plot_pk)
 
+# If you want to save as PNG:
+png("C:/Users/duflo/OneDrive/Bureau/LZD/PK PLOT.png",
+    width  = 16,
+    height = 9,
+    units  = 'in',
+    res    = 900)
 
-
-png("C:/Users/duflo/OneDrive/Bureau/LZD/PK PLOT.png", width = 16, height = 9, units = 'in', res = 900)  # Specify width, height, and resolution
-
-# Print the plot to the device
 print(plot_pk)
-
-# Close the device
 dev.off()
+
