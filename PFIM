@@ -1,3 +1,4 @@
+library(PFIM)
 # Riff C, Guilhaumou R, Marsot A, et al. Ropivacaine Wound Infiltration for Pain Management After Breast Cancer Mastectomy: A Population Pharmacokinetic Analysis. Clin Pharmacol Drug Dev. 2018;7(8):811-819. doi:10.1002/cpdd.452
 modelEquations = list(
 
@@ -64,7 +65,7 @@ Report( evaluationPop, outputPath, outputFile, plotOptions )
 administrationConstraintsRespPK = AdministrationConstraints( outcome = "RespPK", doses = c( 80) )
 		
 samplingConstraintsRespPK  = SamplingTimeConstraints( outcome = "RespPK",
-                                                      initialSamplings = c(0.25,0.5,0.75,1,1.25,1.5,4,6,10,12,16,20,22,24),
+                                                      initialSamplings = c(0.25,0.5,0.75,1,1.25,1.5,5,6,24),
                                                       numberOfsamplingsOptimisable = 7 )
 
 
@@ -88,7 +89,7 @@ optimizationPopFIM = Optimization( name = "PK_analytic_populationFIM",
                              modelParameters = modelParameters,
                              modelError = modelError,
                              optimizer = "FedorovWynnAlgorithm",
-                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,1.25,1.5,4,6,10,12,16,20,22,24)),
+                             optimizerParameters = list( elementaryProtocols = list(c(0.25,0.5,0.75,1,1.25,1.5,5,6,24)),
                              numberOfSubjects = c(50),
                              proportionsOfSubjects = c(1),
                              showProcess = T),
@@ -200,7 +201,7 @@ df_CI <- data.frame(
 ############################################
 # 3) Sampling times and points
 ############################################
-sampling_times <- c(0.25, 0.75, 1, 1.25, 1.5, 22, 24)
+sampling_times <- c(0.25, 0.75, 1, 1.25, 1.5, 5, 24)
 
 # Evaluate the *median profile* at these sampling times
 # (If you want per-simulation points, that's another approach.
